@@ -1,0 +1,187 @@
+---
+title: "Nested Design"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+library(lme4)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+Light.Data <- data.frame(
+  Light = c(69,84,78,58,71,84,79,61,71,54,52,64,72,56,49,66,57,62,78,56,71,64,79,58),
+  Site = gl(n=3,k=8,length=24,labels=c("S1","S2","S3")),
+  Batch = gl(n=4,k=1,length=24,labels=c("B1","B2","B3","B4"))) %>%
+  mutate(Full_Batch = factor(paste(Site, Batch, sep="."),
+    levels=c("S1.B1","S1.B2","S1.B3","S1.B4","S2.B1","S2.B2","S2.B3","S2.B4","S3.B1","S3.B2","S3.B3","S3.B4")))
+```
+
+## Tutorial
+
+### Information
+In this activity you will work through fitting models for nested designs in R. Our data concern a company investigating a quality problem in the production of photographic film. The company conduct a simple study into whether the light sensitivity of film is dependent on the manufacturing site by randomly selecting three batches from each site and taking two replicates per batch. The data are shown in the table below and have also been loaded in the enviroment in the `Light.Data` dataset, which contains three variables, the response `Light`, and the variables `Site` and `Batch`. The dataset also contains a column `Full_Batch` which is a combination of the `Site` and `Batch` variables.
+
+```{=html}
+<table style="width:100%">
+  <thead>
+    <tr>
+      <th style="text-align: left;border: 1px solid black;
+  border-collapse: collapse;" align="left">Site</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">S1</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">S2</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">S3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border-right: 1px solid black; border-left: 1px solid black; border-collapse: collapse;"><b>Batch</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="border-right: 1px solid black; border-left: 1px solid black; border-collapse: collapse;"></td>
+      <td>69</td>
+      <td>84</td>
+      <td>78</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">58</td>
+      <td>71</td>
+      <td>54</td>
+      <td>52</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">64</td>
+      <td>57</td>
+      <td>62</td>
+      <td>78</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">56</td>
+    </tr>
+    <tr style="border-bottom: 1px solid black;">
+      <td>71</td>
+      <td>84</td>
+      <td>79</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">61</td>
+      <td>72</td>
+      <td>56</td>
+      <td>49</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">66</td>
+      <td>71</td>
+      <td>64</td>
+      <td>79</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">58</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Exercise 1
+Use the R window below to fit an appropriate mixed effects model, assuming that `Batch` is a random effect.
+
+```{r Q1, exercise=TRUE, exercise.lines = 8}
+# look at first few rows of data
+head(Light.Data)
+
+# fit the mixed effects model
+
+
+# Display the results
+```
+
+```{r Q1-solution, exercise.reveal_solution = FALSE}
+Light.Data <- data.frame(
+  Light = c(69,84,78,58,71,84,79,61,71,54,52,64,72,56,49,66,57,62,78,56,71,64,79,58),
+  Site = gl(n=3,k=8,length=24,labels=c("S1","S2","S3")),
+  Batch = gl(n=4,k=1,length=24,labels=c("B1","B2","B3","B4"))) %>%
+  mutate(Full_Batch = factor(paste(Site, Batch, sep="."),
+    levels=c("S1.B1","S1.B2","S1.B3","S1.B4","S2.B1","S2.B2","S2.B3","S2.B4","S3.B1","S3.B2","S3.B3","S3.B4")))
+# look at first few rows of data
+head(Light.Data)
+
+# fit the RB model
+Light.mod <- aov(Light~Site+Error(Full_Batch), data=Light.Data)
+
+# Display the results
+summary(Light.mod)
+```
+
+```{r Q1-check}
+ex() %>% {
+  check_or(., {
+    check_function(., "aov", not_called_msg = "You should use either aov() or lmer() to fit the model") %>%
+      {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the aov() function. Have you specified the random effect correctly using the Error() function? Remember that batch is nested within site.")
+        check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+    check_function(., "summary")
+  }, {
+    override_solution(., "{Light.mod <- lmer(Light~Site+(1|Full_Batch), data=Light.Data); summary(Light.mod)}") %>%
+      check_function(., "lmer")})
+  
+  check_or(., {
+    override_solution(., "{Light.mod <- lmer(Light~Site+(1|Full_Batch), data=Light.Data); anova(Light.mod)}") %>%
+      {check_function(., "lmer", not_called_msg = "You should use either aov() or lmer() to fit the model") %>%
+          {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the lmer() function. The random effect should be specified as (1|random). Remember that batch is nested within site.")
+            check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}}
+  },
+  {check_function(., "aov")})
+}
+```
+
+### Exercise 2
+Use the R window below to fit an appropriate mixed effects model, assuming that *both* `Site` and `Batch` are random effects.
+```{r Q2, exercise=TRUE, exercise.lines = 8}
+# look at first few rows of data
+head(Light.Data)
+
+# fit the mixed effects model
+
+
+# Display the results
+
+```
+
+```{r Q2-solution, exercise.reveal_solution = FALSE}
+Light.Data <- data.frame(
+  Light = c(69,84,78,58,71,84,79,61,71,54,52,64,72,56,49,66,57,62,78,56,71,64,79,58),
+  Site = gl(n=3,k=8,length=24,labels=c("S1","S2","S3")),
+  Batch = gl(n=4,k=1,length=24,labels=c("B1","B2","B3","B4"))) %>%
+  mutate(Full_Batch = factor(paste(Site, Batch, sep="."),
+    levels=c("S1.B1","S1.B2","S1.B3","S1.B4","S2.B1","S2.B2","S2.B3","S2.B4","S3.B1","S3.B2","S3.B3","S3.B4")))
+# look at first few rows of data
+head(Light.Data)
+
+# fit the RB model
+Light.mod <- lmer(Light~(1|Site)+(1|Full_Batch), data=Light.Data)
+
+# Display the results
+summary(Light.mod)
+```
+
+```{r Q2-check}
+ex() %>% {
+  check_function(., "lmer", not_called_msg = "You should use lmer() to fit the model") %>%
+    {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the lmer() function. The random effect should be specified as (1|random). Remember that Batch is nested within Site.")
+      check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+  
+  check_function(., "summary")
+}
+```
+

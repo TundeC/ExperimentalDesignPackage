@@ -1,0 +1,113 @@
+---
+title: "Two Way TukeyHSD and linear contrast"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+RB.Data <- data.frame(
+  Yield=c(6.3,11.3,12.3,8.7,5.9,10.2,12.6,7.2,3.4,10.1,11.4,3.6),
+  Intensity=gl(n=3,k=4,length=12,labels=c("low","medium","high")),
+  Sterilant=gl(n=4,k=1,length=12,labels=c("Control","Methamsodium","Chloropicrin","Carbon Disulphide")))
+RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data)
+```
+
+## Tutorial
+
+### Exercise 1a
+The Tukey HSD correction for multiple comparisons in a randomised block design works in exactly the same way as for a completely randomised design. In the previous set of exercises we found that there was a significant p-value for the F-test for the treatments, which indicates that there is some difference in the effect of the different sterilants on the potato crop yield. It would then be natural to explore this further by using Tukey's HSD to construct pairwise confidence intervals (or perform pairwise tests).
+
+In this exercise you should produce pairwise intervals for the differences between the treatment groups using Tukey's HSD. `RB.Data`, which contains three variables, the response `Yield`, the treatment variable `Sterilant` and the blocking factor `Intensity` is loaded in the environment. The anova for these data is available in the R session and is stored in the object `RB.mod`.
+
+```{r Q1_1, exercise=TRUE, exercise.lines = 4}
+# summarise the model
+summary(RB.mod)
+
+# Obtain pairwise intervals
+
+```
+
+```{r Q1_1-solution, exercise.reveal_solution = FALSE}
+RB.Data <- data.frame(
+  Yield=c(6.3,11.3,12.3,8.7,5.9,10.2,12.6,7.2,3.4,10.1,11.4,3.6),
+  Intensity=gl(n=3,k=4,length=12,labels=c("low","medium","high")),
+  Sterilant=gl(n=4,k=1,length=12,labels=c("Control","Methamsodium","Chloropicrin","Carbon Disulphide")))
+RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data)
+# summarise the model
+summary(RB.mod)
+
+# check the assumptions
+TukeyHSD(RB.mod, "Sterilant")
+```
+
+```{r Q1_1-check}
+ex() %>% { 
+  check_error(.)
+  check_function(.,"TukeyHSD") %>% 
+    {
+      check_arg(., "x","The first argument to TukeyHSD() should be the model fit")
+      check_arg(., "which","The second argument to TukeyHSD() should be the treatment factor")
+    }
+}
+```
+
+
+### Exercise 1b
+```{r Q1_2}
+question(
+  "Select the answer from the list below which matches the significant differences observed in these data.",
+  answer("Methamsodium and Chloropicrin produce significantly larger yields than the Control and Carbon Disulphide",correct=TRUE,message="Correct - the confidence intervals for each of Methamsodium and Chloropicrin minus the control are entirely positive and the confidence intervals for Carbon Disulphide minus each of Methamsodium and Chloropicrin are entirely negative"),
+  answer("Methamsodium and Chloropicrin produce significantly smaller yields than the Control and Carbon Disulphide",message="No - the confidence intervals for each of Methamsodium and Chloropicrin minus the control are entirely positive and the confidence intervals which says that Methansodium and Chloropicrin produce larger yields than the control. The intervals for for Carbon Disulphide minus each of Methamsodium and Chloropicrin are entirely negative, which suggests that Methansodium and Chloropicrin also produce larger yields than Carbon Disulphide."),
+  answer("Methamsodium and Chloropicrin produce significantly smaller yields than the Control and larger yields than Carbon Disulphide",message="No - the confidence intervals for each of Methamsodium and Chloropicrin minus the control are entirely positive and the confidence intervals which says that Methansodium and Chloropicrin produce larger yields than the control. "),
+  answer("Methamsodium and Chloropicrin produce significantly larger yields than the Control and smaller yields than Carbon Disulphide",message="No - The intervals for for Carbon Disulphide minus each of Methamsodium and Chloropicrin are entirely negative, which suggests that Methansodium and Chloropicrin also produce larger yields than Carbon Disulphide."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+### Exercise 2a
+```{r Q2_1}
+question(
+    "Linear contrasts work for two way Anovas in exactly the same way as in a completely randomised design.
+<br><br>
+For the example, involving potato crop yield, the researchers had specified an interest in comparing the control to an average of the other three sterilants prior to conducting the experiments. Based on this select the most appropriate set of values for this contrast from the list below, the factor levels are in the following order: Control, Methamsodium, Chloropicrin, Carbon Disulphide.",
+answer("c(3,-1,-1,-1)",correct=TRUE,message="Correct - this vector sums to zero and contrasts the control with the average of the other three treatments"),
+answer("c(3,-1/3,-1/3,-1/3)",message="No - This is not a valid contrast since the values in the vector do not sum to zero"),
+answer("c(1,-1,-1,-1)",message="No - This is not a valid contrast since the values in the vector do not sum to zero"),
+answer("c(1,0,1,-2)",message="No - This is a contrast between the control and methamsodium treatments compared to the carbon disulphide treatment"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+  )
+```
+
+### Exercise 2b
+
+```{r echo=TRUE}
+gmodels::fit.contrast(RB.mod,"Sterilant",coeff=rbind("Control vs Other Sterilants"=c(1,-1/3,-1/3,-1/3)))
+```
+
+
+```{r Q2_2}
+question(
+    "The code above was used to fit the contrast. From the list below, selet the correct conclusion based on the output of the linear contrast.",
+answer("The control sterilant has significantly lower yield compared to the average of the other three treatments",correct=TRUE,message="Correct - this contrast does the comparison control - (average of other three treatments) the estimate of this is negative, which implies that the average yield of the other three treatments is larger than that of the control treatment."),
+answer("The control sterilant has significantly higher yield compared to the average of the other three treatments",message="No - this contrast does the comparison control - (average of other three treatments) the estimate of this is negative, which implies that the average yield of the other three treatments is larger than that of the control treatment."),
+answer("The control sterilant is not significantly different compared to the average of the other three treatments",message="No - the p-value is small, which indicates that there is a significant difference. Additionally, this contrast does the comparison control - (average of other three treatments) the estimate of this is negative, which implies that the average yield of the other three treatments is larger than that of the control treatment."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+  )
+```
+
+

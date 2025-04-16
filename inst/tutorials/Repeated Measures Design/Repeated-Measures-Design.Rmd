@@ -1,0 +1,149 @@
+---
+title: "Repeated Measures Design"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+library(lme4)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+tamoxifen <- read.csv("https://raw.githubusercontent.com/ryanstew96/teaching-data/refs/heads/main/L5Q3_IEO007_RM.csv") %>% mutate_at(vars(Patient,Treatment,Time),as.factor)
+```
+
+## Tutorial
+
+### Information
+When multiple observations have been made one the same subject (normally through time) then this is called a repeated measures design. We should, in this case, incorporate the two factors in the model as normal, but should additionally incorporate a random effect for subject. Throughout this activity, we will look at data on the effect of tamoxifen and fenretinide on putative surrogate biomarkers in premenopausal women at increased risk for breast cancer. A total of 235 women were randomly assigned in a double-blind manner either to tamoxifen 5 mg/d, or fenretinide 200 mg/d, or both agents, or placebo for 2 years. 
+
+These data have been loaded in the enviroment in the dataset `tamoxifen`, which contains four variables, the response `IGF1`, and the variables `Treatment`, `Time` and `Patient`. The variable `Patient` is nested within `Treatment`. A summary of the dataset is shown below.
+
+```{r}
+summary(tamoxifen)
+```
+
+### Exercise 1a
+Use the R window below to fit an appropriate model and check the assumptions. 
+```{r Q1_1, exercise=TRUE, exercise.lines = 8}
+# look at first few rows of data
+head(tamoxifen)
+
+# fit the model
+
+
+# produce plots to check the assumptions
+
+```
+
+```{r Q1_1-solution, exercise.reveal_solution = FALSE}
+tamoxifen <- read.csv("https://raw.githubusercontent.com/ryanstew96/teaching-data/refs/heads/main/L5Q3_IEO007_RM.csv") %>% mutate_at(vars(Patient,Treatment,Time),as.factor)
+# look at first few rows of data
+head(tamoxifen)
+
+# fit the model
+mod1 <- aov(IGF1~Treatment + Patient + Time + Treatment:Time,data=tamoxifen)
+
+# produce plots to check the assumptions
+plot(mod1)
+```
+
+```{r Q1_1-check}
+ex() %>% {
+  check_or(.,
+           {override_solution(., "{mod1 <- lm(IGF1~Treatment + Patient + Time + Treatment:Time, data=tamoxifen); plot(mod1)}") %>%
+               {check_function(., "lm", not_called_msg = "You should use either aov() or lm() to fit the model") %>%
+                   {check_arg(., "formula") %>% check_equal(., eval=FALSE, "Check the formula specified in the lm() function. You should have your response on the left and the two factors on the right hand side. Note that since patient is nested within treatement the first two terms should be Treatment and Patient.")
+                     check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+               }
+           },
+           {check_function(., "aov")})
+  
+  check_or(., {check_function(., "aov", not_called_msg = "You should use either aov() or lm() to fit the model") %>%
+      {check_arg(., "formula") %>% check_equal(., eval=FALSE, "Check the formula specified in the aov() function. You should have your response on the left and the two factors on the right hand side. Note that since patient is nested within treatement the first two terms should be Treatment and Patient.")
+        check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+  }, {override_solution(., "{RB.mod <- lm(Yield~Intensity+Sterilant, data=RB.Data); anova(RB.mod)}") %>% check_function(., "lm")})
+  
+  check_function(., "plot")
+}
+```
+
+### Exercise 1b
+```{r Q1_2}
+question(
+  "State whether you believe that all assumptions have been met.",
+  answer("All assumptions have been met.",correct=TRUE,message="Correct - there is no obvious trend in the scale-location plot and no obvious fanning out in the residuals vs fitted values plot which indicates constant variance has been met. The points follow the line on the Q-Q plot fairly closely which indicates that the residuals are normally distributed."),
+  answer("Not all of the assumptions have been met.",message="No - there is no obvious trend in the scale-location plot and no obvious fanning out in the residuals vs fitted values plot which indicates constant variance has been met. The points follow the line on the Q-Q plot fairly closely which indicates that the residuals are normally distributed.")
+)
+```
+
+### Exercise 2a
+Use the R window below to it an appropriate mixed effects model, then produce an interaction plot.
+```{r Q2_1, exercise=TRUE, exercise.lines = 8}
+# look at first few rows of data
+head(tamoxifen)
+
+# fit the mixed effects model
+
+
+# Produce the interaction plot
+
+```
+
+```{r Q2_1-solution, exercise.reveal_solution = FALSE}
+tamoxifen <- read.csv("https://raw.githubusercontent.com/ryanstew96/teaching-data/refs/heads/main/L5Q3_IEO007_RM.csv") %>% mutate_at(vars(Patient,Treatment,Time),as.factor)
+# look at first few rows of data
+head(tamoxifen)
+
+# fit the RB model
+mod1 <- aov(IGF1~Treatment + Time + Treatment:Time + Error(Patient),data=tamoxifen)
+
+# Produce the interaction plot
+with(tamoxifen, interaction.plot(Time, Treatment, IGF1))
+```
+
+```{r Q2_1-check}
+ex() %>% {check_or(., {check_function(., "aov", not_called_msg = "You should use either aov() or lmer() to fit the model") %>%
+    {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the aov() function. Have you specified the random effect correctly using the Error() function?")
+    check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+
+
+    }, {override_solution(., "{mod1 <- lmer(IGF1~Treatment + Time + Treatment:Time + (1|Patient), data=tamoxifen); summary(mod1)}") %>%
+    check_function(., "lmer")})
+
+    check_or(., {override_solution(., "{mod1 <- lmer(IGF1~Treatment + Time + Treatment:Time + (1|Patient), data=tamoxifen); summary(mod1)}") %>%
+    {check_function(., "lmer", not_called_msg = "You should use either aov() or lmer() to fit the model") %>%
+    {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the lmer() function. The random effect should be specified as (1|random).")
+    check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}}
+
+    },
+    {check_function(., "aov")})
+    check_function(., "interaction.plot") %>% {check_arg(., "response") %>% 
+        check_equal(., "The third argument in the interaction.plot() function should be the response", eval=FALSE)
+    check_arg(., "x.factor") %>% check_equal(., eval=FALSE, "This plot is easiest to read when the time variable is on the x-axis")
+    check_arg(., "trace.factor") %>% check_equal(., eval=FALSE)}
+    }
+```
+
+###Exercise 2b
+```{r Q2_2}
+question(
+  "Select the statement which best describes the effect based on the interaction plot.",
+  answer("The two tamoxifen groups are similar to each other and show a different trend to the other two groups. The tamoxifen groups result in an overall lower biomarker level.",correct=TRUE,message="Correct - the two lines TP and TF are similar, which indicates that these two groups behave in a similar way. These also have the lowest level of biomarker at the end of the 24 months, with TP being the lowest overall."),
+  answer("The two tamoxifen groups are similar to each other and show a different trend to the other two groups. The tamoxifen groups result in an overall higher biomarker level.",message="No - the two lines TP and TF are similar, which indicates that these two groups behave in a similar way. However, these groups have the lowest level of biomarker at the end of the 24 months, with TP being the lowest overall."),
+  answer("All of the groups exhibit different trends. The tamoxifen groups result in an overall lower biomarker level.",message="No - the two lines TP and TF are similar, which indicates that these two groups behave in a similar way. The other two groups are also similar to each other."),
+  answer("All of the groups exhibit the same trend",message="No - the two lines TP and TF are similar, which indicates that these two groups behave in a similar way. The other two groups are also similar to each other, however there is a large difference in trend between the tamoxifen and non tamoxifen trends."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+

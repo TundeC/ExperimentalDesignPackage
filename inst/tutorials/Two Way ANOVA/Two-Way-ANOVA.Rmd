@@ -1,0 +1,211 @@
+---
+title: "Two Way ANOVA"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+RB.Data <- data.frame(
+  Yield=c(6.3,11.3,12.3,8.7,5.9,10.2,12.6,7.2,3.4,10.1,11.4,3.6),
+  Intensity=gl(n=3,k=4,length=12,labels=c("low","medium","high")),
+  Sterilant=gl(n=4,k=1,length=12,labels=c("Control","Methamsodium","Chloropicrin","Carbon Disulphide")))
+```
+
+## Tutorial
+
+### Information
+This tutorial will look at the ANOVA table for a randomised block design. You will be guided to explore the data and identify key components of the ANOVA table using small R exercises. Below is a summary of the ANOVA table and its components. Note the additional row in this table for the blocking factor:
+
+|Source|df|SS|MS|F|
+|:-----|:-|:-|:-|:-|
+|Treatment|$k-1$|SSTR|MSTr|$\frac{MSTr}{MSE}$|
+|Block|$n-1$|SSB|MSB|$\frac{MSB}{MSE}$|
+|Error (Residual)|$(k-1)(n-1)$|SSE|MSE||
+|Total|$nk-1$||||
+
+- $k$ is the number of treatments
+- $n$ is the number of block
+- SS is the sum of squares
+  - $SSTr = n\sum_{j=1}^{k}{(\bar{T}_J-\bar{G})^2}$
+  - $SSB = k\sum_{j=1}^{n}{(\bar{B}_i-\bar{G})^2}$
+  - $SSE = \sum_{i=1}^n{\sum_{j=1}^k{(X_{ij}-\bar{T}_j-\bar{B}_i+\bar{G})^2}}$
+- MS is the mean square, which can be found by dividing the sum of squares by the appropriate degrees of freedom.
+
+### Exercise 1a
+The data used in this exercise examines the effect of different sterilants on the yield of a potato crop. Eelworm instensity is also expected to impact yield, and information on this has been included in these data. Measurements were taken across three elvels of eelworm instensity and four different sterialnts. These data are shown below and have also been loaded in the environment in the `RB.Data` dataset in three columns: the response `Yield`, the treatment variable `Sterilant`, and the blocking variable `Intensity`.
+
+```{=html}
+<table style="width:100%">
+  <thead>
+    <tr>
+      <th colspan="2"> </th>
+      <th colspan="4">Sterialnt</th>
+    </tr>
+    <tr>
+      <th colspan="2"> </th>
+      <th>Control</th>
+      <th>Methamsodium</th>
+      <th>Chloropicrin</th>
+      <th>Carbon Disulphide</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3"><b>Eelworm Intensity</b></td>
+      <td><b>Low</b></td>
+      <td>6.3</td>
+      <td>11.3</td>
+      <td>12.3</td>
+      <td>8.7</td>
+    </tr>
+    <tr>
+      <td><b>Medium</b></td>
+      <td>5.9</td>
+      <td>10.2</td>
+      <td>12.6</td>
+      <td>7.2</td>
+    </tr>
+    <tr>
+      <td><b>High</b></td>
+      <td>3.4</td>
+      <td>10.1</td>
+      <td>11.4</td>
+      <td>3.6</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+```
+
+
+
+Use the R window below to contrust an appropriate model and produce the resulting ANOVA table.
+
+```{r Q1_1, exercise=TRUE, exercise.lines = 6}
+# look at first few rows of data
+head(RB.Data)
+
+# fit the RB model
+
+# Display the results
+
+```
+
+```{r Q1_1-solution, exercise.reveal_solution = FALSE}
+RB.Data <- data.frame(
+  Yield=c(6.3,11.3,12.3,8.7,5.9,10.2,12.6,7.2,3.4,10.1,11.4,3.6),
+  Intensity=gl(n=3,k=4,length=12,labels=c("low","medium","high")),
+  Sterilant=gl(n=4,k=1,length=12,labels=c("Control","Methamsodium","Chloropicrin","Carbon Disulphide")))
+# look at first few rows of data
+head(RB.Data)
+
+# fit the RB model
+RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data)
+
+# Display the results
+summary(RB.mod)
+```
+
+```{r Q1_1-check}
+ex() %>% {
+  check_or(.,
+           {override_solution(., "{RB.mod <- lm(Yield~Intensity+Sterilant, data=RB.Data); anova(RB.mod)}") %>%
+               {check_function(., "lm", not_called_msg = "You should use either aov() or lm() to fit the model") %>%
+                   {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the lm() function. You should have your response on the left and the two factors on the right hand side")
+                     check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+                 check_function(.,"anova")}
+            },
+           {check_function(., "aov")}
+           )
+  
+  check_or(., 
+           {check_function(., "aov", not_called_msg = "You should use either aov() or lm() to fit the model") %>%
+               {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the aov() function. You should have your response on the left and the two factors on the right hand side")
+                 check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+             check_or(., override_solution(., "{RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data); anova(RB.mod)}") %>%
+                        check_function(.,"anova"), check_function(.,"summary"))
+            },
+           {override_solution(., "{RB.mod <- lm(Yield~Intensity+Sterilant, data=RB.Data); anova(RB.mod)}") %>% 
+               check_function(., "lm")}
+  )
+}
+```
+
+### Exercise 1b
+
+```{r Q1_2}
+question(
+  "Select the statement which best describes your <u>main conclusion</u> from the above analysis.",
+  answer("No differences between eelworm intensities",message="No - The intensity effect is significant, however this is not our primary interest since we expected differences in yield between the different eelworm intensities prior to conducting the experiment"),
+  answer("Significant differences between eelworm intensities",message="No - The intensity effect is significant, however this is not our primary interest since we expected differences in yield between the different eelworm intensities prior to conducting the experiment"),
+  answer("No differences between the sterilants",message="No - The p-value for the test is 0.0006 which indicates that there is some difference in the effectiveness of the sterilants"),
+  answer("Significant differences between the sterilants",correct=TRUE,message="Correct - The p-value for the test is 0.0006 which indicates that there is some difference in the effectiveness of the sterilants"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+### Exercise 2a
+The correct model from the previous example is now loaded in the environment under the name `RB.mod`. The dataset, `RB.data` is also still available.
+
+Use the R window below to check the model assumptions.
+```{r Q2_1-setup}
+RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data)
+```
+
+
+```{r Q2_1, exercise=TRUE, exercise.lines = 5, exercise.setup="Q2_1-setup"}
+# summarise the model
+summary(RB.mod)
+
+# check the assumptions
+
+```
+
+```{r Q2_1-solution, exercise.reveal_solution = FALSE}
+RB.Data <- data.frame(
+  Yield=c(6.3,11.3,12.3,8.7,5.9,10.2,12.6,7.2,3.4,10.1,11.4,3.6),
+  Intensity=gl(n=3,k=4,length=12,labels=c("low","medium","high")),
+  Sterilant=gl(n=4,k=1,length=12,labels=c("Control","Methamsodium","Chloropicrin","Carbon Disulphide")))
+RB.mod <- aov(Yield~Intensity+Sterilant, data=RB.Data)
+
+# summarise the model
+summary(RB.mod)
+
+# check the assumptions
+plot(RB.mod)
+```
+
+```{r Q2_1-check}
+ex() %>% { 
+  check_error(.)
+  check_function(.,"plot") %>% check_arg(., "x","You need to specify the model")
+}
+```
+
+### Exercise 2b
+```{r Q2_2}
+question(
+  "Select all assumptions that you geel have been satisfied by this model.",
+  answer("Normally Distributed",correct=TRUE,message="Correct - The point approximately follow the reference line in the Q-Q plot"),
+  answer("Constant Variance",correct=TRUE,message="Correct - The scale vs location plot shows no obvious trend, and there is no obvious change in spread in the plot of residuals vs fitted values so this assumption has been satisfied"),
+  answer("Constant mean zero",correct=TRUE,message="Correct - There is no obvious trend in the residuals vs fitted values plot which indicates that this assumption has been satisfied"),
+  answer("Independence",correct=TRUE,message="Correct - We don't know anything about the order in which these observations were collected, but there is nothing about the design that suggests that there might be independence"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+

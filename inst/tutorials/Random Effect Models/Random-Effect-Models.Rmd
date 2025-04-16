@@ -1,0 +1,201 @@
+---
+title: "Random Effect Models"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+library(lme4)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+
+Stress.Data <- data.frame(
+  Stress = c(6,13,1,7,0,9,0,7,8,8,6,9,10,2,4,0,7,1,7,4,12,10,9,1,0,10,8,7,5,6,0,5,5,7,7,4,11,5,1,0,6,8,9,6,4,3,4,5),
+  Machine = gl(n=4,k=12,length=48,labels=c("A","B","C","D")),
+  Head = gl(n=4,k=1,length=48,labels=c("1","2","3","4")))
+```
+
+## Tutorial
+
+### Exercise 1
+Random effects are used for factors which are sampled from a population. In this case we aren't interested in the specific effect of this factor, but do want to account for the variation to obtain a better estimate of the treatment effect.
+
+Throughout his exercise, you will construct a mixed effects model for data obtained in an industrial experiment. A light-bulb production line has 100 machines and there are 4 different heads on each machine that manipulate the glass components. The interest is in assessing whether there are any particular heads which put more stress on the glass. As an initial study, the manager decides to sample 4 machines and take three stress measurement for each head on each machine. The data are as follows:
+
+```{=html}
+<table style="width:100%">
+  <thead>
+    <tr>
+      <th style="text-align: left;border: 1px solid black;
+  border-collapse: collapse;" align="left">Machine</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">A</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">B</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">C</th>
+      <th colspan="4" style="border: 1px solid black;
+  border-collapse: collapse;">D</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border-right: 1px solid black; border-left: 1px solid black; border-collapse: collapse;"><b>Head</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+      <td><b>1</b></td>
+      <td><b>2</b></td>
+      <td><b>3</b></td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;"><b>4</b></td>
+    </tr>
+    <tr>
+      <td rowspan="3" style="border-right: 1px solid black; border-left: 1px solid black; border-collapse: collapse;"></td>
+      <td>6</td>
+      <td>13</td>
+      <td>1</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">7</td>
+      <td>10</td>
+      <td>2</td>
+      <td>4</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">0</td>
+      <td>0</td>
+      <td>10</td>
+      <td>8</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">7</td>
+      <td>11</td>
+      <td>5</td>
+      <td>1</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">0</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>9</td>
+      <td>0</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">7</td>
+      <td>7</td>
+      <td>1</td>
+      <td>7</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">4</td>
+      <td>5</td>
+      <td>6</td>
+      <td>0</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">5</td>
+      <td>6</td>
+      <td>8</td>
+      <td>9</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">6</td>
+    </tr>
+    <tr style="border-bottom: 1px solid black;">
+      <td>8</td>
+      <td>8</td>
+      <td>6</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">9</td>
+      <td>12</td>
+      <td>10</td>
+      <td>9</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">1</td>
+      <td>5</td>
+      <td>7</td>
+      <td>7</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">4</td>
+      <td>4</td>
+      <td>3</td>
+      <td>4</td>
+      <td style="border-right: 1px solid black; border-collapse: collapse;">5</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+```{r Q1}
+question(
+  "Select the correct description of each of the effects.",
+  answer("Machine - Fixed
+<br>
+Head - Fixed",message="No - the machines were randomly selected from a larger set of machines so this should be a random effect."),
+  answer("Machine - Random
+<br>
+Head - Fixed",correct=TRUE,message="Correct - the machines were randomly selected from a larger set of machines so this should be a random effect, and we are interested in the mean effect of head so this is a fixed effect."),
+  answer("Machine - Fixed
+<br>
+Head - Random",message="No - the machines were randomly selected from a larger set of machines so this should be a random effect, and we are interested in the mean effect of head so this is a fixed effect."),
+  answer("Machine - Random
+<br>
+Head - Random",message="No - the machines were randomly selected from a larger set of machines so this should be a random effect, but we are interested in the mean effect of head so this is a fixed effect."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+### Exercise 2
+The environment for the R window below contains the dataset `Stress.Data`, which contains three variables, the response `Stress`, and the variables `Head` and `Machine`
+
+You should use this R session to fit an appropriate mixed effects model. You can use either `aov()` or `lmer()`.
+
+```{r Q2, exercise=TRUE, exercise.lines = 8}
+# look at first few rows of data
+head(Stress.Data)
+
+# fit the mixed effects model
+
+# Display the results
+```
+
+```{r Q2-solution, exercise.reveal_solution = FALSE}
+Stress.Data <- data.frame(
+  Stress = c(6,13,1,7,0,9,0,7,8,8,6,9,10,2,4,0,7,1,7,4,12,10,9,1,0,10,8,7,5,6,0,5,5,7,7,4,11,5,1,0,6,8,9,6,4,3,4,5),
+  Machine = gl(n=4,k=12,length=48,labels=c("A","B","C","D")),
+  Head = gl(n=4,k=1,length=48,labels=c("1","2","3","4")))
+# look at first few rows of data
+head(Stress.Data)
+
+# fit the RB model
+Stress.mod <- aov(Stress~Head+Error(Machine/Head), data=Stress.Data)
+
+# Display the results
+summary(Stress.mod)
+```
+
+```{r Q2-check}
+ex() %>% {
+  check_or(., {
+    check_function(., "aov", not_called_msg = "You should use either aov() or lm() to fit the model") %>%
+      {
+        check_arg(., "formula") %>% check_equal(., "Check the formula specified in the aov() function. Have you specified the random effect correctly using the Error() function?")
+        check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}
+  check_function(., "summary")
+  }, 
+  {
+    override_solution(., "{RB.mod <- lmer(Stress~Head+(1|Machine/Head), data=Stress.Data); anova(RB.mod)}") %>%
+      check_function(., "lmer")
+  })
+  check_or(., {
+    override_solution(., "{RB.mod <- lmer(Stress~Head+(1|Machine/Head), data=Stress.Data); anova(RB.mod)}") %>%
+      {check_function(., "lmer", not_called_msg = "You should use either aov() or lmer() to fit the model") %>%
+          {check_arg(., "formula") %>% check_equal(., "Check the formula specified in the lmer() function. The random effect should be specified as (1|random/fixed) for an interaction.")
+            check_arg(., "data") %>% check_equal(., "Have you specified the data set correctly?")}}
+  }, {
+    check_function(., "aov")})
+}
+```
+

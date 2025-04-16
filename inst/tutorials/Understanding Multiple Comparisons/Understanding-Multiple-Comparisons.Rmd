@@ -1,0 +1,182 @@
+---
+title: "Multiple comparisons"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+impurity.aov <- aov(Impurity~Temperature, data=Impurity_data)
+```
+
+## Tutorial
+
+### Information
+
+We have seen that carrying out multiple tests on the same data has an impact on the overall significance level of your conclusions. For that reason, we introduced methods for carrying out multiple tests. Each of the methods described is summarised below.
+
+#### Bonferroni
+
+Bonferroni is the simplest correction for multiple comparisons to implement. The significance level for each individual test is adjusted to $1−(1−\alpha)^{1/m}$, where $m$ is the number of tests being carried out and $\alpha$ is the significance level that is desired overall.
+
+Note that the Bonferroni correction is generally very conservative, and can shrink the per-test significance level more than is required.
+
+#### Tukey's Honestly Significant Difference (HSD)
+
+Tukey's HSD uses the studentized range distribution, also referred to as the q distribution, rather than the t distribution in order to obtain pairwise group comparisons and confidence intervals. A random variable from this distribution is:
+
+$$
+q=\frac{\bar{y}_{max}-\bar{y}_{min}}{s\sqrt{\frac{2}{n}}}
+$$
+
+#### Linear Contrasts
+
+Linear contrasts are specified by the investigators prior to conducting the experiment. These are linear combinations of the treatment means. These are defined by contrast coefficients which must sum to zero.
+
+### Exercise 1a
+In this exercise you will conduct pairwise t-tests for the temperature in the water impurity data.
+
+The impurity data from previous exercises has been loaded in the environment in the `Impurity_data` dataset in two columns: `Impurity`, the amount of impurity removed by the polymer for a given experiment, and `Temperature`, the temperature used in the experiment. The anova for these data has also been made available in the object `impurity.aov`.
+
+You should use the R window below to conduct pairwise t-tests using the bonferroni adjustment. The pairwise t test can be run by using the R function `pairwise.t.test`. You can read the source code of `pairwise.t.test` by typing `getAnywhere(pairwise.t.test)` in the R console.
+
+The function of `pairwise.t.test` has several arguments that you need to provide. For choosing bonferroni adjustment, you need to pass `bonferroni` to the argument `p.adjust.method` (i.e., `p.adjust.method = "bonferroni"`). Another argument is `pool.sd`, which is a logical variable. If `pool.sd` is true, it calculates a common SD for all groups and uses that for all comparisons, which can reduce the uncertainty of SD of some small groups. Please use `?pairwise.t.test` to read the details.
+
+```{r Q1_1, exercise=TRUE, exercise.lines = 6}
+# summarise the model
+summary(impurity.aov)
+
+# conduct pairwise t-tests using bonferroni correction
+
+```
+
+```{r Q1_1-solution, exercise.reveal_solution = FALSE}
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+impurity.aov <- aov(Impurity~Temperature, data=Impurity_data)
+# summarise the model
+summary(impurity.aov)
+
+# conduct pairwise t-tests using bonferroni correction
+pairwise.t.test(Impurity_data$Impurity, Impurity_data$Temperature,p.adjust="bonferroni",pool.sd=T)
+```
+
+```{r Q1_1-check}
+ex() %>% {
+  check_function(.,"pairwise.t.test") %>% {
+    check_arg(., "x","The first argument should be your response variable") %>%
+      check_equal(., "The first argument should be the continuous variable in your data set")
+    check_arg(., "g","The second argument should be your grouping variable") %>%
+      check_equal(., "The second argument should be the categorical variable in your data set")
+    
+    check_arg(., "p.adjust.method", "You should use a bonferroni adjustment for your p-values") %>% 
+      check_equal(., 'To do a bonferroni adjustment specify p.adjust="bonferroni"')
+    
+    check_arg(., "pool.sd") %>% check_equal(.,"you should use pooled standard deviation for a completely randomized design")
+  }
+  check_function(., "summary")
+  check_error(.)
+}
+```
+
+### Exercise 1b
+```{r Q1_2}
+question(
+  "What is the p-value for the text comparing temperature II and temperature IV?",
+  answer("1",message="This is not correct. p-value is usually smaller than 1."),
+  answer("3.8e-08",correct=TRUE,message="Correct! Yes, it is the correct p-value for the test comparing temperature II and temperature IV."),
+  answer("1.2e-07",message="This is incorrect. 1.2e-07 is the p-value for the test comparing temperature II and temperature III."),
+  answer("1.1e-13",message="This is incorrect. 1.1e-13 is the p-value for the test comparing temperature III and temperature V."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+### Exercise 2a
+Use the R window below to construct pairwise confidence intervals using Tukey's HSD. You can do this using the `TukeyHSD` function. If you need help, read through the help file of TukeyHSD by typing `?TukeyHSD` in the R console.
+
+```{r Q2_1, exercise=TRUE, exercise.lines = 6}
+# summarise the model
+summary(impurity.aov)
+
+# Obtain pairwise confidence intervals using Tukey HSD
+
+```
+
+```{r Q2_1-solution, exercise.reveal_solution = FALSE}
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+impurity.aov <- aov(Impurity~Temperature, data=Impurity_data)
+# summarise the model
+summary(impurity.aov)
+
+# Obtain pairwise confidence intervals using Tukey HSD
+TukeyHSD(impurity.aov)
+```
+
+```{r Q2_1-check}
+ex() %>% { check_error(.)
+    check_function(.,"TukeyHSD") %>% check_arg(., "x","You need to specify
+    the model")
+    }
+```
+
+### Exercise 2b
+
+```{r Q2_2}
+question(
+  "Select the interval (correct to 2 d.p.) for the test comparing temperature III and temperature V.",
+  answer("(16.89, 24.44)",correct=TRUE,message="Correct! This is indeed the 95% confidence interval for the difference between Temperature V and III as the output from the Tukey HSD shows."),
+  answer("(20.67, 24.44)",message="Incorrect. 20.67 is the mean difference between Temperature III and V, not the lower bound."),
+  answer("(21.33, 25.11)",message="Incorrect. 21.33 is the mean difference between Temperature IV and V."),
+  answer("(-4.44, 3.11)",message="Incorrect. This is the 95% confidence interval of the difference between Temperature IV and III."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+
+### Exercise 3
+```{r Q3}
+quiz(
+  question(
+    'The following line shows incomplete code used to carry out a contrast of temperatures I and II against temperature III and IV.<br><br>
+    fit.contrast(impurity.aov,"Temperature",rbind("1,2 vs 3,4"=______),conf=0.95, df=T)<br><br>
+    The blank space would be a vector which has the same length as the number of groups. There are 5 temperatures in this example, therefore the vector that goes in here should be of length 5.
+    Select the vector(s) below which would be appropriate for finding the specified cotrast.',
+    answer("c(0,1,0,1,0)",message="No - the sum of the values contained within the vector must sum to zero"),
+    answer("c(-1/2, 1/2, -1/2, 1/2, 0)",message="No - this would be a contrast for temperatures II and IV compared with temperatures I  and III"),
+    answer("c(3,3,-3,-3,0)",correct=TRUE,,message="Correct - Any value can be used in the first 4 positions, values 1 and 2 have to be equal and values 3 and 4 have to be equal. The fifth value must be equal to zero and the whole vector should sum to 0"),
+    answer("c(-1,3,-1,-1,0)",message="c(-1,3,-1,-1,0)"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+  ),
+  question(
+    "The linear contrast was ran, and the output below this question was obtained. Select the statement which most agrees with your conclusions.",
+    answer("On average the Impurity removed is the same for the combination of temperatures I and II compared to the combination of temperature III and IV.",message="Wrong. The output from this linear contrast clearly shows a significant difference between the combination of Temperatures I and II and that of Temperatures III and IV."),
+    answer("On average the impurity removed for temperatures I, II, III and IV are all different",message="Incorrect. This linear contrast just compares the average of temperatures I and II with that of temperature III and IV. It does not compare the impurity between temperature I and II or between temperature III and IV."),
+    answer("On average the impurity removed for temperatures I, II, III and IV are all the same",message="Wrong. The output from this linear contrast definitely shows a significant difference between the combination of Temperatures I and II and that of Temperatures III and IV."),
+    answer("On average the Impurity removed is different for the combination of temperatures I and II compared to the combination of temperature III and IV.",correct=TRUE,message="Correct! This linear contrast specifically compares the average of temperatures I and II to that of temperature III and IV and the difference is significant."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+  )
+)
+```
+
+```{r}
+gmodels::fit.contrast(impurity.aov,"Temperature",rbind("1,2 vs 3,4"=c(3,3,-3,-3,0)),conf=0.95, df=T)
+```
+

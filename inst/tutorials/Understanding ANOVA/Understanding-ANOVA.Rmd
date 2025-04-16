@@ -1,0 +1,191 @@
+---
+title: "Understanding the ANOVA table"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+```
+
+##
+
+This tutorial will look at the ANOVA table for a completely randomised design. You will be guided to explore the data and identify key components of the ANOVA table using small R exercises.
+
+Below is a summary of the ANOVA table and its components:
+
+| Source           | df       | SS   | MS   | F                  |
+|:-----------------|:---------|:-----|:-----|:-------------------|
+| Treatment        | $k-1$    | SSTr | MSTr | $\frac{MSTr}{MSE}$ |
+| Error (Residual) | $k(n-1)$ | SSE  | MSE  |                    |
+| Total            | $nk-1$   |      |      |                    |
+
+-   $k$ is the number of treatments
+
+-   $n$ is the number of observations recorded for each treatment
+
+-   SS is the sum of squares
+
+    -   $SSTr = n\sum_{j=1}^{k}{(\overline{T_j}-\frac{\sum_{i=1}^{n}{\sum_{j=1}^{k}{X_{ij}}}}{kn})^2}$
+
+    -   $SSE = \sum_{i=1}^{n}{\sum_{j=1}^{k}{(X_{ij}-\overline{T_j})^2}}$
+
+-   MS is the mean square which can be found by dividing the sum of squares by the appropriate degrees of freedom
+
+### Exercise 1a
+
+The data we are going to look at throughout this exercise examines a polymer that is planned for use in removing impurities from water. The interest is in whether this is consistent across different temperatures. Experiments were conducted at five different temperatures ($k = 5$), with six observations per setting ($n=6$). Temperature is denoted by the roman numerales I-V. These data are shown below, and are loaded in the environment in the `Impurity_data` dataset in two columns: `Impurity`, the amount of impurity removed by the polymer for a given experiment, and `Temperature`, the temperature used in the experiment.
+
+|  I| II| III| IV|  V|
+|:--:|:--:|:---:|:--:|:--:|
+| 49| 47|  40| 36| 55|
+| 51| 49|  35| 42| 60|
+| 53| 51|  42| 38| 62|
+| 53| 52|  38| 39| 63|
+| 52| 50|  40| 37| 59|
+| 50| 51|  41| 40| 61|
+
+```{r, echo=TRUE}
+summary(Impurity_data)
+```
+
+
+Use the R window below to produce an appropriate plot to explore the data.
+
+
+
+```{r Q1_1, exercise=TRUE, exercise.lines = 3}
+#write code below that produces a plot
+
+
+```
+
+```{r Q1_1-solution, exercise.reveal_solution = FALSE}
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+boxplot(Impurity~Temperature, data=Impurity_data)
+```
+
+```{r Q1_1-check}
+ex() %>% 
+  {
+    check_function(.,"boxplot",
+                   not_called_msg="Have you created the best plot to assess these data?") %>%
+      check_arg(., "formula") %>%
+      check_equal(incorrect_msg="Check that you have specified the data to be plotted correctly. It should be response~treatment")
+    check_error(.)
+  }
+```
+
+```{r Q1_1-hint}
+A boxplot of `Impurity` by `Temperature` would be useful here.
+```
+
+
+### Exercise 1b
+
+```{r Q1_2_quiz}
+question("Examine the plot you produced, and select the statement which matches your findings most closely.",
+         answer("Temperatures I and II are similar, temperatures III and IV are similar, temperature V is different",correct=TRUE,message="Correct -  It looks as though Temperatures I and II have similar median Impurity reduction (~50), Temperatures III and IV also seem to have similar impurity reduction (~40), which is lower than that of Temperatures I and II. Temperature V appears different to the rest with median impurity reduction of around 60."),
+         answer("Temperatures I, II, III and IV are all similar, temperature V is the only one which is different", message="Incorrect - It looks as though Temperatures I and II have similar median Impurity reduction (~50), Temperatures III and IV also seem to have similar impurity reduction (~40), which is lower than that of Temperatures I and II. Temperature V appears different to the rest with median impurity reduction of around 60."),
+         answer("There are no obvious differences by temperature",message="Incorrect -  It looks as though Temperatures I and II have similar median Impurity reduction (~50), Temperatures III and IV also seem to have similar impurity reduction (~40), which is lower than that of Temperatures I and II. Temperature V appears different to the rest with median impurity reduction of around 60."),
+         answer("There is variation across all the groups",message="Incorrect -  It looks as though Temperatures I and II have similar median Impurity reduction (~50), Temperatures III and IV also seem to have similar impurity reduction (~40), which is lower than that of Temperatures I and II. Temperature V appears different to the rest with median impurity reduction of around 60."),
+         allow_retry = TRUE,
+  random_answer_order = TRUE)
+```
+
+### Exercise 2
+There are two interchangeable functions which can be used to carry out an ANOVA. The first of these is `aov()`. In this exercise, you are asked to obtain the ANOVA results using the `aov()` function for the impurity data. Using the R window below, create the ANOVA table, save it as an object (using any name) and view its results.
+
+```{r Q2, exercise=TRUE, exercise.lines = 5}
+# construct the anova table using aov and view the results
+
+```
+
+```{r Q2-solution, exercise.reveal_solution = FALSE}
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+z <- aov(Impurity~Temperature, data=Impurity_data) 
+summary(z)
+```
+
+```{r Q2-check}
+ex() %>% 
+  { 
+    check_function(.,"aov",
+                   not_called_msg="Make sure you are using the aov() function for this exercise.") %>% 
+      {
+      check_arg(., "data","Remember to use the 'data' argument to direct the function to your data")
+        check_arg(., "formula","You have to specify the Anova as a formula") %>%
+          check_equal(., "Your formula should be specified as 'response ~ treatment'")
+      }
+    check_function(., "summary",not_called_msg="You should include code to view the results.")
+    check_error(.)
+  }
+```
+
+```{r Q2-hint}
+The summary() function prints the calculated Anova table.
+```
+
+### Exercise 3
+The second way to obtain an ANOVA in R is to use the `lm()` function, and then use the `anova()` function to obtain the ANOVA table. In the R window below, use this method to opbtain the ANOVA results for the impurity data using this method.
+
+```{r Q3, exercise=TRUE, exercise.lines = 5}
+# construct the anova table and view the results
+
+```
+
+```{r Q3-solution, exercise.reveal_solution=FALSE}
+Impurity_data <- data.frame(Temperature=as.factor(rep(c("I","II","III","IV","V"), each=6)),
+    Impurity=c(49,51,53,53,52,50,47,49,51,52,50,51,40,35,42,38,40,41,36,42,38,39,37,40,55,60,62,63,59,61))
+z.lm <- lm(Impurity~Temperature, data=Impurity_data)
+anova(z.lm)
+```
+
+```{r Q3-check}
+ex() %>% { check_function(.,"lm",
+                   not_called_msg="Make sure to use the lm() and anova() functions in this exercise.") %>% {
+    check_arg(., "data","Remember to use the 'data' argument to direct the
+    function to your data")
+    check_arg(., "formula","You have to specify the Anova as a formula") %>%
+    check_equal(., "Your formula should be specified as 'response ~ treatment'")
+    }
+    check_function(., "anova") %>% check_arg(., "object") %>%
+    check_equal(.)
+    check_error(.)
+    }
+```
+
+```{r Q3-hint}
+The anova() function prints the calculated ANOVA table.
+```
+
+### Exercise 4
+The results from the previous two exercises are the same.
+
+```{r Q4}
+question(
+  "The results from the previous two exercises are the same. Using the resulting ANOVA table, select the statement below which most closely matches your conclusions from the analysis.",
+  answer("There are no significant differences between the number of impurities removed for the different temperatures.",message="No - The F statistic is very high, which means that the variation between treatments is much larger than the variation within individual treatments. The p-value of the test (7.452e-15) is very small which indicates that the test is significant. This is an indication that there is some systematic difference between at least one pair of treatments."),
+  answer("All of the temperatures are significantly different in terms of the amount of impurities removed",message="No - The F statistic is very high, which means that the variation between treatments is much larger than the variation within individual treatments. The p-value of the test (7.452e-15) is very small which indicates that the test is significant. This is an indication that there is some systematic difference between <b>at least one pair of treatments</b>. A significant result does not indicate that all of the treatments are different."),
+  answer("There is at least one significant difference in the number of impurities removed between a pair of temperatures",correct=TRUE,message="Correct - The F statistic is very high, which means that the variation between treatments is much larger than the variation within individual treatments. The p-value of the test (7.452e-15) is very small which indicates that the test is significant. This is an indication that there is some systematic difference between at least one pair of treatments."),
+  answer("Temperatures I and II are different from temperatures II and III which are different to temperature V",message="No - The F statistic is very high, which means that the variation between treatments is much larger than the variation within individual treatments. The p-value of the test (7.452e-15) is very small which indicates that the test is significant. This is an indication that there is some systematic difference between at least one pair of treatments, however it is impossible from this result to conclude that these differences are driving the result."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+

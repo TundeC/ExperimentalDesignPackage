@@ -1,0 +1,23 @@
+Package: ExperimentalDesignPackage
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph).
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Suggests: 
+    learnr
+Imports: 
+    dplyr (>= 1.1.4),
+    gmodels (>= 2.19.1),
+    lme4 (>= 1.1.36),
+    testwhat (>= 4.11.1)
+Remotes:  
+    datacamp/testwhat,
+    tidyverse/dplyr,
+    lme4/lme4,
+    r-gregmisc/gmodels

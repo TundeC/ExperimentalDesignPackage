@@ -1,0 +1,209 @@
+---
+title: "Two Way Factorial"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# remotes::install_github("datacamp/testwhat")
+
+library(learnr)
+library(dplyr)
+library(testwhat)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.checker=testwhat::testwhat_learnr)
+
+industry <- data.frame(
+  Noise = c(5.2,4.8,4.7,5.8,6.2,6.1,7.6,7.9,7.7,3.8,4.2,3.9,4.66,4.9,4.8,6,6.2,6),
+  Insulation = gl(n=2,k=9,length=18,labels=c("low","high")),
+  Speed = rep(gl(n=3,k=3,length=9,labels=c("low","medium","high")), 2)
+  )
+```
+
+## Tutorial
+
+### Information
+Two way factorial models are used when you have multiple factors and you suspect that the effect of changing one of the factors differs depending on the other factor being used. In the hospital cleaning example, this was seen by the difference in the effect the cloth used between the two different cleaning agents. These models are fit in the same way as previously, using aov.
+
+In the following examples, we will look at data concerning an industrial experiment that investigates the effect of machine insulation and speed on the noise produced. There were two levels of insulation and three levels of speed. The data are shown below, and are loaded in the environment in the `industry` dataset in three columns: the response `Noise`, and the two treatment variables `Insulation` and `Speed`.
+
+```{=html}
+<table style="width:100%">
+  <thead>
+    <tr>
+      <th>Insulation</th>
+      <th>Speed</th>
+      <th colspan="3">Noise Measurements</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3">Low</td>
+      <td>Low</td>
+      <td>5.2</td>
+      <td>4.8</td>
+      <td>4.7</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>5.8</td>
+      <td>6.2</td>
+      <td>6.1</td>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>7.6</td>
+      <td>7.9</td>
+      <td>7.7</td>
+    </tr>
+    <tr>
+      <td rowspan="3">High</td>
+      <td>Low</td>
+      <td>3.8</td>
+      <td>4.2</td>
+      <td>3.9</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>4.6</td>
+      <td>4.9</td>
+      <td>4.8</td>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>6.0</td>
+      <td>6.2</td>
+      <td>6.0</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Exercise 1
+Using the R window below, produce a plot which will help to assess whether an interaction term is necessary.
+
+```{r Q1, exercise=TRUE, exercise.lines = 4}
+# look at the first few rows of data
+head(industry)
+
+# produce the plot
+
+```
+
+```{r Q1-solution, exercise.reveal_solution = FALSE}
+industry <- data.frame(
+  Noise = c(5.2,4.8,4.7,5.8,6.2,6.1,7.6,7.9,7.7,3.8,4.2,3.9,4.66,4.9,4.8,6,6.2,6),
+  Insulation = gl(n=2,k=9,length=18,labels=c("low","high")),
+  Speed = rep(gl(n=3,k=3,length=9,labels=c("low","medium","high")), 2)
+  )
+# look at the first few rows of data
+head(industry)
+
+# produce the plot
+boxplot(Noise~Insulation:Speed, data=industry)
+```
+
+```{r Q1-check}
+ex() %>% 
+  {
+    check_or(.,check_function(.,"boxplot") %>% 
+               {
+                 check_arg(.,"data")
+                 check_arg(., "formula") %>% check_equal(.)
+               },
+             override_solution(., "boxplot(Noise~Insulation+Speed, data=industry)") %>% 
+               check_function(.,"boxplot") %>%
+               {
+                 check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)
+               },
+             override_solution(., "boxplot(Noise~Insulation*Speed, data=industry)") %>% 
+               check_function(.,"boxplot") %>%
+               {
+                 check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)
+               }
+             )
+  }
+```
+
+### Exercise 2a
+Fit a a two-way interaction model for the experimental data, and explore the results further.
+
+```{r Q2_1, exercise=TRUE, exercise.lines = 8}
+# look at the first few rows of data
+head(industry)
+
+# fit the model
+
+# produce the interaction plot
+
+```
+
+```{r Q2_1-solution, exercise.reveal_solution = FALSE}
+industry <- data.frame(
+  Noise = c(5.2,4.8,4.7,5.8,6.2,6.1,7.6,7.9,7.7,3.8,4.2,3.9,4.66,4.9,4.8,6,6.2,6),
+  Insulation = gl(n=2,k=9,length=18,labels=c("low","high")),
+  Speed = rep(gl(n=3,k=3,length=9,labels=c("low","medium","high")), 2)
+  )
+# look at the first few rows of data
+head(industry)
+
+# fit the model
+z <- aov(Noise~Insulation*Speed, data=industry)
+
+# produce the interaction plot
+with(industry, interaction.plot(Speed, Insulation, Noise))
+```
+
+```{r Q2_1-check}
+ex() %>% 
+  {
+    check_or(.,check_function(.,"aov") %>%
+               {check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)},
+             override_solution(., "aov(Noise~Insulation:Speed, data=industry)") %>%
+               check_function(.,"aov") %>% 
+               {check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)},
+             override_solution(., "aov(Noise~Insulation+Speed+Insulation*Speed, data=industry)") %>%
+               check_function(.,"aov") %>% 
+               {check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)},
+             override_solution(., "aov(Noise~Insulation+Speed+Insulation:Speed, data=industry)") %>%
+               check_function(.,"aov") %>% 
+               {check_arg(., "data")
+                 check_arg(., "formula") %>% check_equal(.)})
+    check_or(., check_function(., "interaction.plot") %>%
+               {check_arg(.,"response") %>% 
+                   check_equal(., "The third argument in the interaction.plot() function should be the response",eval=FALSE)
+                 check_arg(., "x.factor") %>% check_equal(., eval=FALSE)
+                 check_arg(., "trace.factor") %>% check_equal(., eval=FALSE)},
+             override_solution(., "interaction.plot(Insulation , Speed, Noise)") %>%
+               check_function(., "interaction.plot") %>% 
+               {check_arg(., "response") %>%
+                   check_equal(., "The third argument in the interaction.plot() function should be the response", eval=FALSE)
+                 check_arg(., "x.factor") %>% check_equal(., eval=FALSE)
+                 check_arg(., "trace.factor") %>% check_equal(., eval=FALSE)})
+    
+    check_function(., "with") %>% check_arg(., "data")
+    }
+```
+
+### Exercise 2b
+```{r Q2_2}
+question(
+  "Select the statement below which is most similar to your conclusions about the relationship between noise, insulation and speed.",
+  answer("There is a significant interaction - Increasing insulation is always associated with a reduction in noise.  The effect is greater at high speeds.",correct = TRUE,message="Correct - In the interaction plot you can see that the line between medium and high for high insulation is flatter than that for low insulation. This indicates a greater decrease noise at high speeds for high insulation."),
+  answer("There is a significant interaction - Increasing insulation is always associated with a reduction in noise.  The effect is smaller at high speeds.",message="No - In the interaction plot you can see that the line between medium and high for high insulation is flatter than that for low insulation. This indicates a greater decrease noise at high speeds for high insulation."),
+  answer("There is a significant interaction - Increasing insulation is always associated with a reduction in noise.  The effect is greater at low speeds.",message="No - In the interaction plot you can see that the line between medium and high for high insulation is flatter than that for low insulation. This indicates a greater decrease noise at high speeds for high insulation."),
+  answer("There is no interaction effect",message="No - The interaction effect is significant, which indicates some difference. In the interaction plot you can see that the line between medium and high for high insulation is flatter than that for low insulation. This indicates a greater decrease noise at high speeds for high insulation."),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
